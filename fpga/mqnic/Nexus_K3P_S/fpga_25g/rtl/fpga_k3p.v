@@ -6,8 +6,28 @@
 // Language: Verilog 2001
 
 `resetall
+/*
+ * 功能：这个指令用于在仿真过程中将模块和所有子模块重置为初始状态。
+ * 作用域：它会影响整个设计，包括所有模块实例。
+ * 常见用途：通常用于测试时，确保仿真从一个干净的状态开始
+ */
 `timescale 1ns / 1ps
+/*
+ * 语法：timescale <time_unit> / <time_precision>
+ * 参数：
+ * <time_unit>：指定时间单位（如1ns表示纳秒）。
+ * <time_precision>：指定时间精度（如1ps表示皮秒）。
+ * 作用：它设定了整个设计中时间的单位和精度。
+ * 示例：1ns / 1ps 表示时间单位为纳秒，精度为皮秒
+ */
 `default_nettype none
+/*
+ * 语法：default_nettype <net_type>
+ * 参数：
+ * <net_type>：指定默认的网类型（如none表示无连接）。
+ * 作用：它设定了模块中未明确声明的信号的默认网络类型。
+ * 示例：none 表示所有未声明的信号将被视为无连接。
+ */
 
 /*
  * FPGA top-level module
@@ -15,6 +35,7 @@
 module fpga #
 (
     // FW and board IDs
+    // 声明一个名为FPGA_ID的参数，并且赋予它一个特定的32位十六进制的初始值
     parameter FPGA_ID = 32'h4A63093,
     parameter FW_ID = 32'h00000000,
     parameter FW_VER = 32'h00_00_01_00,
@@ -139,7 +160,7 @@ module fpga #
     /*
      * Clock
      */
-    input  wire         clk_10mhz,
+    input  wire         clk_100mhz,
 
     /*
      * GPIO
@@ -259,38 +280,39 @@ wire mmcm_clkfb;
 // VCO range: 800 MHz to 1600 MHz
 // M = 64, D = 11 sets Fvco = 937.5 MHz (in range)
 // Divide by 7.5 to get output frequency of 125 MHz
+//MMCM（Mixed-Mode Clock Manager）实例化
 MMCME4_BASE #(
     .BANDWIDTH("OPTIMIZED"),
-    .CLKOUT0_DIVIDE_F(7.5),
-    .CLKOUT0_DUTY_CYCLE(0.5),
-    .CLKOUT0_PHASE(0),
-    .CLKOUT1_DIVIDE(1),
+    .CLKOUT0_DIVIDE_F(7.5),     //设置为7.5，用来将VCO频率分配到125MHz。计算方法是937.5 ÷ 7.5 = 125MHz
+    .CLKOUT0_DUTY_CYCLE(0.5),   //DUTY_CYCLE全设为0.5，这表示所有输出的时钟都是50%的占空比
+    .CLKOUT0_PHASE(0),          //PHASE设置为0度，也是默认值，没有相位偏移
+    .CLKOUT1_DIVIDE(1),         //DIVIDE为1，这意味着这些输出时钟与VCO频率相同，即937.5 MHz
     .CLKOUT1_DUTY_CYCLE(0.5),
     .CLKOUT1_PHASE(0),
-    .CLKOUT2_DIVIDE(1),
+    .CLKOUT2_DIVIDE(1),         //DIVIDE为1，这意味着这些输出时钟与VCO频率相同，即937.5 MHz
     .CLKOUT2_DUTY_CYCLE(0.5),
     .CLKOUT2_PHASE(0),
-    .CLKOUT3_DIVIDE(1),
+    .CLKOUT3_DIVIDE(1),         //DIVIDE为1，这意味着这些输出时钟与VCO频率相同，即937.5 MHz
     .CLKOUT3_DUTY_CYCLE(0.5),
     .CLKOUT3_PHASE(0),
-    .CLKOUT4_DIVIDE(1),
+    .CLKOUT4_DIVIDE(1),         //DIVIDE为1，这意味着这些输出时钟与VCO频率相同，即937.5 MHz
     .CLKOUT4_DUTY_CYCLE(0.5),
     .CLKOUT4_PHASE(0),
-    .CLKOUT5_DIVIDE(1),
+    .CLKOUT5_DIVIDE(1),         //DIVIDE为1，这意味着这些输出时钟与VCO频率相同，即937.5 MH
     .CLKOUT5_DUTY_CYCLE(0.5),
     .CLKOUT5_PHASE(0),
-    .CLKOUT6_DIVIDE(1),
+    .CLKOUT6_DIVIDE(1),         //DIVIDE为1，这意味着这些输出时钟与VCO频率相同，即937.5 MH
     .CLKOUT6_DUTY_CYCLE(0.5),
     .CLKOUT6_PHASE(0),
-    .CLKFBOUT_MULT_F(64),
+    .CLKFBOUT_MULT_F(64),       //说明M和D的值分别是64和11
     .CLKFBOUT_PHASE(0),
-    .DIVCLK_DIVIDE(11),
+    .DIVCLK_DIVIDE(11),         //说明M和D的值分别是64和11,VCO频率应该是（M×输入频率）除以D，也就是（64×161.13）/11
     .REF_JITTER1(0.010),
-    .CLKIN1_PERIOD(6.206),
-    .STARTUP_WAIT("FALSE"),
-    .CLKOUT4_CASCADE("FALSE")
+    .CLKIN1_PERIOD(6.206),      //输入时钟周期的估计值，以纳秒为单位。计算一下：6.206 ns对应的频率大约是161.13 MHz（因为1/6.206≈0.0016113秒，即161.13 MHz）
+    .STARTUP_WAIT("FALSE"),     //在MMCM启动时不需要额外等待
+    .CLKOUT4_CASCADE("FALSE")   //可能与某些特定的输出配置相关，具体要看用户设计是否涉及级联结构
 )
-clk_mmcm_inst (
+clk_mmcm_inst (                 //MMCM 实例接口
     .CLKIN1(clk_161mhz_int),
     .CLKFBIN(mmcm_clkfb),
     .RST(mmcm_rst),
@@ -310,29 +332,29 @@ clk_mmcm_inst (
     .CLKFBOUTB(),
     .LOCKED(mmcm_locked)
 );
-
+//将MMCM的输出时钟传递到全局缓冲，这样可以确保时钟信号在FPGA中的分布更稳定和一致。输入来自CLKOUT0，也就是125MHz的信号，经过BUFG后成为clk_125mhz_int。
 BUFG
 clk_125mhz_bufg_inst (
     .I(clk_125mhz_mmcm_out),
     .O(clk_125mhz_int)
 );
-
+//模块实例化，名字叫做sync_reset
 sync_reset #(
     .N(4)
 )
 sync_reset_125mhz_inst (
     .clk(clk_125mhz_int),
-    .rst(~mmcm_locked),
-    .out(rst_125mhz_int)
+    .rst(~mmcm_locked), //复位信号。这里使用了~mmcm_locked，即对mmcm_locked进行了取反操作。这意味着当mmcm_locked为低电平时，复位信号为高；当mmcm_locked为高电平时，复位信号为低。
+    .out(rst_125mhz_int) //输出的同步复位信号
 );
 
 // Internal 250 MHz high-stability clock
-wire clk_10mhz_bufg;
+wire clk_100mhz_bufg;
 
 BUFG
 init_clk_bufg_inst (
-    .I(clk_10mhz),
-    .O(clk_10mhz_bufg)
+    .I(clk_100mhz),
+    .O(clk_100mhz_bufg)
 );
 
 wire clk_250mhz_mmcm_out;
@@ -350,6 +372,16 @@ wire mmcm_250mhz_clkfb;
 // VCO range: 800 MHz to 1600 MHz
 // M = 100, D = 1 sets Fvco = 1000 MHz
 // Divide by 4 to get output frequency of 250 MHz
+// 混合模式时钟管理器，作用类似于 PLL（锁相环），用来调节频率
+// 功能：将输入的 10 MHz 时钟，倍频到 250 MHz。
+// 压控振荡器 (VCO): MMCM 内部先将频率升高。
+//Fvco​=Fin​×M/D​=10MHz×100/1​=1000MHz
+//
+//    对应参数：.CLKFBOUT_MULT_F(100) (M) 和 .DIVCLK_DIVIDE(1) (D)
+// 输出 (Output): 将 VCO 频率分频得到最终输出。
+//Fout​=Fvco/O​​=1000MHz/4​=250MHz
+//
+//    对应参数：.CLKOUT0_DIVIDE_F(4)
 MMCME4_BASE #(
     .BANDWIDTH("OPTIMIZED"),
     .CLKOUT0_DIVIDE_F(4),
@@ -377,13 +409,13 @@ MMCME4_BASE #(
     .CLKFBOUT_PHASE(0),
     .DIVCLK_DIVIDE(1),
     .REF_JITTER1(0.010),
-    .CLKIN1_PERIOD(100.000),
+    .CLKIN1_PERIOD(10.000),    //输入 (Input): 100 MHz (CLKIN1_PERIOD = 10.000 ns).
     .STARTUP_WAIT("FALSE"),
     .CLKOUT4_CASCADE("FALSE")
 )
 clk_250mhz_mmcm_inst (
-    .CLKIN1(clk_10mhz_bufg),
-    .CLKFBIN(mmcm_250mhz_clkfb),
+    .CLKIN1(clk_100mhz_bufg),    //输入的 10M 参考时钟
+    .CLKFBIN(mmcm_250mhz_clkfb),    //.CLKFBIN / .CLKFBOUT: 反馈回路。这是 PLL 工作的核心，必须把输出反馈回输入来校准相位。
     .RST(mmcm_250mhz_rst),
     .PWRDWN(1'b0),
     .CLKOUT0(clk_250mhz_mmcm_out),
@@ -399,15 +431,25 @@ clk_250mhz_mmcm_inst (
     .CLKOUT6(),
     .CLKFBOUT(mmcm_250mhz_clkfb),
     .CLKFBOUTB(),
-    .LOCKED(mmcm_250mhz_locked)
+    .LOCKED(mmcm_250mhz_locked) //“锁定”指示信号。这非常重要。当它变高电平（1）时，表示时钟频率已经稳定了，可以使用了；如果是低电平，说明时钟还在抖动，此时不能工作
 );
 
+//MMCM 输出的信号只是一个普通的电信号，驱动能力很弱。如果直接把它连到 FPGA 内部成千上万个触发器上，信号会衰减、延迟（Skew）会非常大，导致电路跑不起来
+//BUFG 的作用： 它把这个时钟信号推送到 FPGA 专用的**全局时钟树（Global Clock Tree）**网络上。这个网络像是一个巨大的树根系统，能保证时钟信号几乎同
+//时到达芯片的每一个角落，且驱动力极强。
+//总结：凡是给逻辑使用的时钟，必须经过 BUFG。
 BUFG
 clk_250mhz_bufg_inst (
     .I(clk_250mhz_mmcm_out),
     .O(clk_250mhz_int)
 );
 
+//MMCM 的 .LOCKED 信号是异步的（它随时可能变高）。如果直接用它作为逻辑的复位信号，可能会在时钟边沿附近发生变化，
+//导致亚稳态（Metastability），也就是电路进入未知状态。
+//解决方案： 这个模块（通常由几个级联的触发器组成）把异步的 LOCKED 信号，同步到新的 250MHz 时钟域下。
+
+//逻辑含义： “只要时钟还没稳定（Locked=0），我就一直按着复位键（Rst=1），不让电路动。等时钟稳定了（Locked=1），我在 250MHz 的节拍下安全地松开复位键。”
+//
 sync_reset #(
     .N(4)
 )
