@@ -13,11 +13,16 @@ set_property CONFIG_MODE BPI16                               [current_design]
 set_property BITSTREAM.CONFIG.OVERTEMPSHUTDOWN Enable        [current_design]
 
 # 10 MHz TXCO
-set_property -dict {LOC D14  IOSTANDARD LVCMOS33} [get_ports clk_10mhz]
-create_clock -period 100.000 -name clk_10mhz [get_ports clk_10mhz]
+# set_property -dict {LOC D14  IOSTANDARD LVCMOS33} [get_ports clk_10mhz]
+# create_clock -period 100.000 -name clk_10mhz [get_ports clk_10mhz]
 
 # D14 cannot directly drive MMCM, so need to set CLOCK_DEDICATED_ROUTE to satisfy DRC
-set_property CLOCK_DEDICATED_ROUTE ANY_CMT_COLUMN [get_nets clk_10mhz_bufg]
+# set_property CLOCK_DEDICATED_ROUTE ANY_CMT_COLUMN [get_nets clk_10mhz_bufg]
+# 100 MHz system clock
+set_property -dict {LOC E18  IOSTANDARD LVDS} [get_ports clk_100mhz_p]
+set_property -dict {LOC D18  IOSTANDARD LVDS} [get_ports clk_100mhz_n]
+# 告诉 Vivado 这是一个 100MHz 时钟 (10ns 周期)
+create_clock -period 10 -name clk_100mhz [get_ports clk_100mhz_p]
 
 # LEDs
 set_property -dict {LOC J12 IOSTANDARD LVCMOS33 SLEW SLOW DRIVE 12} [get_ports {sfp_1_led[0]}]

@@ -158,9 +158,10 @@ module fpga #
 )
 (
     /*
-     * Clock
+     * Clock: 100MHz LVDS
      */
-    input  wire         clk_100mhz,
+    input  wire       clk_100mhz_p,
+    input  wire       clk_100mhz_n,
 
     /*
      * GPIO
@@ -273,6 +274,19 @@ wire rst_125mhz_int;
 wire mmcm_rst = pcie_user_reset;
 wire mmcm_locked;
 wire mmcm_clkfb;
+
+//差分转单端 (Differential to Single-Ended)
+wire clk_100mhz_buffered;
+
+IBUFGDS #(
+   .DIFF_TERM("FALSE"),
+   .IBUF_LOW_PWR("FALSE")   
+)
+clk_100mhz_ibufg_inst (
+   .O   (clk_100mhz_ibufg),
+   .I   (clk_100mhz_p),
+   .IB  (clk_100mhz_n) 
+);
 
 // MMCM instance
 // 161.13 MHz in, 125 MHz out
@@ -414,7 +428,7 @@ MMCME4_BASE #(
     .CLKOUT4_CASCADE("FALSE")
 )
 clk_250mhz_mmcm_inst (
-    .CLKIN1(clk_100mhz_bufg),    //输入的 10M 参考时钟
+    .CLKIN1(clk_100mhz_ibufg),    //输入的 100M 参考时钟
     .CLKFBIN(mmcm_250mhz_clkfb),    //.CLKFBIN / .CLKFBOUT: 反馈回路。这是 PLL 工作的核心，必须把输出反馈回输入来校准相位。
     .RST(mmcm_250mhz_rst),
     .PWRDWN(1'b0),
