@@ -5,9 +5,12 @@ set base_name {eth_xcvr_gth}
 
 set preset {GTH-10GBASE-R}
 
+# 自由运行时钟，连接到GTY核的DRP(Dynamic Reconfiguration Port)时钟，或者叫初始化时钟
+# 来自于系统时钟
 set freerun_freq {125}
 set line_rate {10.3125}
-set refclk_freq {161.1328125}
+# 修改参考时钟，156.25 x 66 = 10.3125 156.25x165 = 25.78125
+set refclk_freq {156.25}
 set sec_line_rate {0}
 set sec_refclk_freq $refclk_freq
 set qpll_fracn [expr {int(fmod($line_rate*1000/2 / $refclk_freq, 1)*pow(2, 24))}]
