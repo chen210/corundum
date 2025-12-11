@@ -318,22 +318,7 @@ module fpga_core #
     output wire                               eeprom_i2c_scl_t,
     input  wire                               eeprom_i2c_sda_i,
     output wire                               eeprom_i2c_sda_o,
-    output wire                               eeprom_i2c_sda_t,
-
-    /*
-     * BPI Flash
-     */
-    output wire                               fpga_boot,
-    input  wire [15:0]                        flash_dq_i,
-    output wire [15:0]                        flash_dq_o,
-    output wire                               flash_dq_oe,
-    output wire [22:0]                        flash_addr,
-    output wire                               flash_region,
-    output wire                               flash_region_oe,
-    output wire                               flash_ce_n,
-    output wire                               flash_oe_n,
-    output wire                               flash_we_n,
-    output wire                               flash_adv_n
+    output wire                               eeprom_i2c_sda_t
 );
 
 parameter PORT_COUNT = IF_COUNT*PORTS_PER_IF;
@@ -436,16 +421,6 @@ reg eeprom_i2c_sda_o_reg = 1'b1;
 
 reg fpga_boot_reg = 1'b0;
 
-reg [15:0] flash_dq_o_reg = 16'd0;
-reg flash_dq_oe_reg = 1'b0;
-reg [22:0] flash_addr_reg = 23'd0;
-reg flash_region_reg = 1'b0;
-reg flash_region_oe_reg = 1'b0;
-reg flash_ce_n_reg = 1'b1;
-reg flash_oe_n_reg = 1'b1;
-reg flash_we_n_reg = 1'b1;
-reg flash_adv_n_reg = 1'b1;
-
 assign ctrl_reg_wr_wait = sfp_drp_reg_wr_wait;
 assign ctrl_reg_wr_ack = ctrl_reg_wr_ack_reg | sfp_drp_reg_wr_ack;
 assign ctrl_reg_rd_data = ctrl_reg_rd_data_reg | sfp_drp_reg_rd_data;
@@ -469,18 +444,6 @@ assign eeprom_i2c_scl_o = eeprom_i2c_scl_o_reg;
 assign eeprom_i2c_scl_t = eeprom_i2c_scl_o;
 assign eeprom_i2c_sda_o = eeprom_i2c_sda_o_reg;
 assign eeprom_i2c_sda_t = eeprom_i2c_sda_o;
-
-assign fpga_boot = fpga_boot_reg;
-
-assign flash_dq_o = flash_dq_o_reg;
-assign flash_dq_oe = flash_dq_oe_reg;
-assign flash_addr = flash_addr_reg;
-assign flash_region = flash_region_reg;
-assign flash_region_oe = flash_region_oe_reg;
-assign flash_ce_n = flash_ce_n_reg;
-assign flash_oe_n = flash_oe_n_reg;
-assign flash_we_n = flash_we_n_reg;
-assign flash_adv_n = flash_adv_n_reg;
 
 i2c_single_reg #(
     .FILTER_LEN(4),
@@ -551,33 +514,6 @@ always @(posedge clk_250mhz) begin
                 end
                 if (ctrl_reg_wr_strb[1]) begin
                     sfp_2_tx_disable_reg <= ctrl_reg_wr_data[13];
-                    sfp_2_rs_reg <= ctrl_reg_wr_data[14];
-                end
-            end
-            // BPI flash
-            RBB+8'h3C: begin
-                // BPI flash ctrl: format
-                fpga_boot_reg <= ctrl_reg_wr_data == 32'hFEE1DEAD;
-            end
-            RBB+8'h40: begin
-                // BPI flash ctrl: address
-                flash_addr_reg <= ctrl_reg_wr_data[22:0];
-                flash_region_reg <= ctrl_reg_wr_data[23];
-            end
-            RBB+8'h44: flash_dq_o_reg <= ctrl_reg_wr_data; // BPI flash ctrl: data
-            RBB+8'h48: begin
-                // BPI flash ctrl: control
-                if (ctrl_reg_wr_strb[0]) begin
-                    flash_ce_n_reg <= ctrl_reg_wr_data[0];
-                    flash_oe_n_reg <= ctrl_reg_wr_data[1];
-                    flash_we_n_reg <= ctrl_reg_wr_data[2];
-                    flash_adv_n_reg <= ctrl_reg_wr_data[3];
-                end
-                if (ctrl_reg_wr_strb[1]) begin
-                    flash_dq_oe_reg <= ctrl_reg_wr_data[8];
-                end
-                if (ctrl_reg_wr_strb[2]) begin
-                    flash_region_oe_reg <= ctrl_reg_wr_data[16];
                 end
             end
             default: ctrl_reg_wr_ack_reg <= 1'b0;
@@ -613,7 +549,7 @@ always @(posedge clk_250mhz) begin
             // XCVR GPIO
             RBB+8'h20: ctrl_reg_rd_data_reg <= 32'h0000C101;             // XCVR GPIO: Type
             RBB+8'h24: ctrl_reg_rd_data_reg <= 32'h00000100;             // XCVR GPIO: Version
-            RBB+8'h28: ctrl_reg_rd_data_reg <= RB_BASE_ADDR+8'h30;       // XCVR GPIO: Next header
+            RBB+8'h28: ctrl_reg_rd_data_reg <= 32'd0;       // Next header -> NULL
             RBB+8'h2C: begin
                 // XCVR GPIO: control 0123
                 ctrl_reg_rd_data_reg[0] <= !sfp_1_npres;
@@ -623,33 +559,6 @@ always @(posedge clk_250mhz) begin
                 ctrl_reg_rd_data_reg[8] <= !sfp_2_npres;
                 ctrl_reg_rd_data_reg[10] <= sfp_2_los;
                 ctrl_reg_rd_data_reg[13] <= sfp_2_tx_disable_reg;
-                ctrl_reg_rd_data_reg[14] <= sfp_2_rs_reg;
-            end
-            // BPI flash
-            RBB+8'h30: ctrl_reg_rd_data_reg <= 32'h0000C121;             // SPI flash ctrl: Type
-            RBB+8'h34: ctrl_reg_rd_data_reg <= 32'h00000200;             // SPI flash ctrl: Version
-            RBB+8'h38: ctrl_reg_rd_data_reg <= RB_DRP_SFP_BASE;          // SPI flash ctrl: Next header
-            RBB+8'h3C: begin
-                // BPI flash ctrl: format
-                ctrl_reg_rd_data_reg[3:0]   <= 2;                   // configuration (two segments)
-                ctrl_reg_rd_data_reg[7:4]   <= 1;                   // default segment
-                ctrl_reg_rd_data_reg[11:8]  <= 0;                   // fallback segment
-                ctrl_reg_rd_data_reg[31:12] <= 32'h00000000 >> 12;  // first segment size (even split)
-            end
-            RBB+8'h40: begin
-                // BPI flash ctrl: address
-                ctrl_reg_rd_data_reg[22:0] <= flash_addr_reg;
-                ctrl_reg_rd_data_reg[23] <= flash_region_reg;
-            end
-            RBB+8'h44: ctrl_reg_rd_data_reg <= flash_dq_i; // BPI flash ctrl: data
-            RBB+8'h48: begin
-                // BPI flash ctrl: control
-                ctrl_reg_rd_data_reg[0] <= flash_ce_n_reg; // chip enable (inverted)
-                ctrl_reg_rd_data_reg[1] <= flash_oe_n_reg; // output enable (inverted)
-                ctrl_reg_rd_data_reg[2] <= flash_we_n_reg; // write enable (inverted)
-                ctrl_reg_rd_data_reg[3] <= flash_adv_n_reg; // address valid (inverted)
-                ctrl_reg_rd_data_reg[8] <= flash_dq_oe_reg; // data output enable
-                ctrl_reg_rd_data_reg[16] <= flash_region_oe_reg; // region output enable (addr bit 23)
             end
             default: ctrl_reg_rd_ack_reg <= 1'b0;
         endcase
@@ -671,16 +580,6 @@ always @(posedge clk_250mhz) begin
         eeprom_i2c_sda_o_reg <= 1'b1;
 
         fpga_boot_reg <= 1'b0;
-
-        flash_dq_o_reg <= 16'd0;
-        flash_dq_oe_reg <= 1'b0;
-        flash_addr_reg <= 23'd0;
-        flash_region_reg <= 1'b0;
-        flash_region_oe_reg <= 1'b0;
-        flash_ce_n_reg <= 1'b1;
-        flash_oe_n_reg <= 1'b1;
-        flash_we_n_reg <= 1'b1;
-        flash_adv_n_reg <= 1'b1;
     end
 end
 
