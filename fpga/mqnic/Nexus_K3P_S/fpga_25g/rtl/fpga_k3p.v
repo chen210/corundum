@@ -168,12 +168,6 @@ module fpga #
      */
     output wire [1:0]   sfp_1_led,
     output wire [1:0]   sfp_2_led,
-    output wire [1:0]   sma_led,
-
-    input  wire         sma_in,
-    output wire         sma_out,
-    output wire         sma_out_en,
-    output wire         sma_term_en,
 
     /*
      * PCI express
@@ -1343,12 +1337,6 @@ core_inst (
      */
     //.sfp_1_led(sfp_1_led),
     //.sfp_2_led(sfp_2_led),
-    .sma_led(sma_led),
-
-    .sma_in(sma_in),
-    .sma_out(sma_out),
-    .sma_out_en(sma_out_en),
-    .sma_term_en(sma_term_en),
 
     /*
      * PCIe

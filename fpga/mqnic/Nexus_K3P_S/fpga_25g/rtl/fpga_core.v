@@ -179,12 +179,6 @@ module fpga_core #
      */
     output wire [1:0]                         sfp_1_led,
     output wire [1:0]                         sfp_2_led,
-    output wire [1:0]                         sma_led,
-
-    input  wire                               sma_in,
-    output wire                               sma_out,
-    output wire                               sma_out_en,
-    output wire                               sma_term_en,
 
     /*
      * PCIe
@@ -795,14 +789,10 @@ end
 
 endgenerate
 
-assign sma_out = ptp_perout_pulse;
-assign sma_out_en = 1'b0;
-assign sma_term_en = 1'b0;
-
 assign sfp_1_led = 2'b00;
 assign sfp_2_led = 2'b00;
-assign sma_led[0] = ptp_pps_str;
-assign sma_led[1] = 1'b0;
+assign led[0] = ptp_pps_str; 
+assign led[1] = 1'b1;        
 
 wire [PORT_COUNT-1:0]                         eth_tx_clk;
 wire [PORT_COUNT-1:0]                         eth_tx_rst;

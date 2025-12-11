@@ -41,17 +41,6 @@ set_output_delay 0 [get_ports {sfp_1_led[*] sfp_2_led[*] sma_led[*]}]
 #set_property -dict {LOC G9   IOSTANDARD LVCMOS18} [get_ports gpio[2]]
 #set_property -dict {LOC G10  IOSTANDARD LVCMOS18} [get_ports gpio[3]]
 
-# SMA
-set_property -dict {LOC A14  IOSTANDARD LVCMOS33} [get_ports sma_in]
-set_property -dict {LOC A12  IOSTANDARD LVCMOS33 SLEW FAST DRIVE 12} [get_ports sma_out]
-set_property -dict {LOC A13  IOSTANDARD LVCMOS33 SLEW SLOW DRIVE 12} [get_ports sma_out_en]
-set_property -dict {LOC B12  IOSTANDARD LVCMOS33 SLEW SLOW DRIVE 12} [get_ports sma_term_en]
-
-set_false_path -to [get_ports {sma_out sma_out_en sma_term_en}]
-set_output_delay 0 [get_ports {sma_out sma_out_en sma_term_en}]
-set_false_path -from [get_ports {sma_in}]
-set_input_delay 0 [get_ports {sma_in}]
-
 # Config
 #set_property -dict {LOC C14  IOSTANDARD LVCMOS33} [get_ports ddr_npres]
 
