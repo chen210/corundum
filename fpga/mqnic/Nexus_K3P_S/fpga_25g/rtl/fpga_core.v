@@ -300,8 +300,6 @@ module fpga_core #
     input  wire                               sfp_2_npres,
     input  wire                               sfp_1_los,
     input  wire                               sfp_2_los,
-    output wire                               sfp_1_rs,
-    output wire                               sfp_2_rs,
 
     input  wire                               sfp_i2c_scl_i,
     output wire                               sfp_i2c_scl_o,
@@ -409,9 +407,7 @@ wire sfp_i2c_scl_i_int = sfp_i2c_scl_i & sfp_i2c_scl_o;
 wire sfp_i2c_sda_i_int = (sfp_1_i2c_sda_i || !sfp_i2c_select[0]) && (sfp_2_i2c_sda_i || !sfp_i2c_select[1]) & sfp_i2c_sda_o_reg & sfp_i2c_select_sda_o;
 
 reg sfp_1_tx_disable_reg = 1'b0;
-reg sfp_1_rs_reg = 1'b0;
 reg sfp_2_tx_disable_reg = 1'b0;
-reg sfp_2_rs_reg = 1'b0;
 
 reg sfp_i2c_scl_o_reg = 1'b1;
 reg sfp_i2c_sda_o_reg = 1'b1;
@@ -429,9 +425,6 @@ assign ctrl_reg_rd_ack = ctrl_reg_rd_ack_reg | sfp_drp_reg_rd_ack;
 
 assign sfp_1_tx_disable = !sfp_1_tx_disable_reg;
 assign sfp_2_tx_disable = !sfp_2_tx_disable_reg;
-
-assign sfp_1_rs = sfp_1_rs_reg;
-assign sfp_2_rs = sfp_2_rs_reg;
 
 assign sfp_i2c_scl_o = sfp_i2c_scl_o_reg & sfp_i2c_select_scl_o;
 assign sfp_i2c_scl_t = sfp_i2c_scl_o;
@@ -510,7 +503,6 @@ always @(posedge clk_250mhz) begin
                 // XCVR GPIO: control 0123
                 if (ctrl_reg_wr_strb[0]) begin
                     sfp_1_tx_disable_reg <= ctrl_reg_wr_data[5];
-                    sfp_1_rs_reg <= ctrl_reg_wr_data[6];
                 end
                 if (ctrl_reg_wr_strb[1]) begin
                     sfp_2_tx_disable_reg <= ctrl_reg_wr_data[13];
@@ -555,7 +547,6 @@ always @(posedge clk_250mhz) begin
                 ctrl_reg_rd_data_reg[0] <= !sfp_1_npres;
                 ctrl_reg_rd_data_reg[2] <= sfp_1_los;
                 ctrl_reg_rd_data_reg[5] <= sfp_1_tx_disable_reg;
-                ctrl_reg_rd_data_reg[6] <= sfp_1_rs_reg;
                 ctrl_reg_rd_data_reg[8] <= !sfp_2_npres;
                 ctrl_reg_rd_data_reg[10] <= sfp_2_los;
                 ctrl_reg_rd_data_reg[13] <= sfp_2_tx_disable_reg;
@@ -569,9 +560,7 @@ always @(posedge clk_250mhz) begin
         ctrl_reg_rd_ack_reg <= 1'b0;
 
         sfp_1_tx_disable_reg <= 1'b0;
-        sfp_1_rs_reg <= 1'b0;
         sfp_2_tx_disable_reg <= 1'b0;
-        sfp_2_rs_reg <= 1'b0;
 
         sfp_i2c_scl_o_reg <= 1'b1;
         sfp_i2c_sda_o_reg <= 1'b1;

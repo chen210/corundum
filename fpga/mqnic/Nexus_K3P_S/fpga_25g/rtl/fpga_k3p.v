@@ -199,8 +199,6 @@ module fpga #
     input  wire         sfp_2_npres,
     input  wire         sfp_1_los,
     input  wire         sfp_2_los,
-    output wire         sfp_1_rs,
-    output wire         sfp_2_rs,
 
     inout  wire         sfp_i2c_scl,
     inout  wire         sfp_1_i2c_sda,
@@ -1282,8 +1280,6 @@ core_inst (
     .sfp_2_npres(sfp_2_npres_int),
     .sfp_1_los(sfp_1_los_int),
     .sfp_2_los(sfp_2_los_int),
-    .sfp_1_rs(sfp_1_rs),
-    .sfp_2_rs(sfp_2_rs),
 
     .sfp_i2c_scl_i(sfp_i2c_scl_i),
     .sfp_i2c_scl_o(sfp_i2c_scl_o),
