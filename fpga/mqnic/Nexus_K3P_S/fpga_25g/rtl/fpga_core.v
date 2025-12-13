@@ -166,6 +166,7 @@ module fpga_core #
      */
     input  wire                               clk_250mhz,
     input  wire                               rst_250mhz,
+    input  wire                               clk_100mhz,
 
     /*
      * PTP clock
@@ -177,8 +178,9 @@ module fpga_core #
     /*
      * GPIO
      */
-    output wire [1:0]                         sfp_1_led,
-    output wire [1:0]                         sfp_2_led,
+    output wire                               sfp_1_led,
+    output wire                               sfp_2_led,
+    output wire [3:0]                         led,
 
     /*
      * PCIe
@@ -677,10 +679,10 @@ end
 
 endgenerate
 
-assign sfp_1_led = 2'b00;
-assign sfp_2_led = 2'b00;
-assign led[0] = ptp_pps_str; 
-assign led[1] = 1'b1;        
+assign sfp_1_led = 1'b0;
+assign sfp_2_led = 1'b0;
+assign led[0] = ptp_pps_str;
+assign led[1] = 1'b0;
 
 wire [PORT_COUNT-1:0]                         eth_tx_clk;
 wire [PORT_COUNT-1:0]                         eth_tx_rst;

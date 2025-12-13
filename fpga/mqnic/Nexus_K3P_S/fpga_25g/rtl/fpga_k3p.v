@@ -166,8 +166,8 @@ module fpga #
     /*
      * GPIO
      */
-    output wire [1:0]   sfp_1_led,
-    output wire [1:0]   sfp_2_led,
+    output wire       sfp_1_led,
+    output wire       sfp_2_led,
 
     /*
      * PCI express
@@ -244,7 +244,7 @@ parameter AXIS_ETH_RX_USER_WIDTH = (PTP_TS_ENABLE ? PTP_TS_WIDTH : 0) + 1;
 wire pcie_user_clk;
 wire pcie_user_reset;
 
-wire clk_161mhz_int;
+wire clk_156mhz_int;
 
 wire clk_125mhz_mmcm_out;
 
@@ -299,16 +299,16 @@ MMCME4_BASE #(
     .CLKOUT6_DIVIDE(1),         //DIVIDE为1，这意味着这些输出时钟与VCO频率相同，即937.5 MH
     .CLKOUT6_DUTY_CYCLE(0.5),
     .CLKOUT6_PHASE(0),
-    .CLKFBOUT_MULT_F(64),       //说明M和D的值分别是64和11
+    .CLKFBOUT_MULT_F(6),       //说明M和D的值分别是6和1
     .CLKFBOUT_PHASE(0),
-    .DIVCLK_DIVIDE(11),         //说明M和D的值分别是64和11,VCO频率应该是（M×输入频率）除以D，也就是（64×161.13）/11
+    .DIVCLK_DIVIDE(1),         //说明M和D的值分别是6和1,VCO频率应该是（M×输入频率）除以D，也就是（6×156.25）/1
     .REF_JITTER1(0.010),
-    .CLKIN1_PERIOD(6.206),      //输入时钟周期的估计值，以纳秒为单位。计算一下：6.206 ns对应的频率大约是161.13 MHz（因为1/6.206≈0.0016113秒，即161.13 MHz）
-    .STARTUP_WAIT("FALSE"),     //在MMCM启动时不需要额外等待
-    .CLKOUT4_CASCADE("FALSE")   //可能与某些特定的输出配置相关，具体要看用户设计是否涉及级联结构
+    .CLKIN1_PERIOD(6.400),      //输入时钟周期的估计值，以纳秒为单位。计算一下：6.400 ns对应的频率大约是156.25 MHz（因为1/6.400≈0.0015625秒，即156.25 MHz）
+    .STARTUP_WAIT("FALSE"),     //MMCM 只要一通电、有时钟输入，立刻开始工作（尝试锁定频率），不管 FPGA 其他部分有没有准备好，为了PCIe扫描
+    .CLKOUT4_CASCADE("FALSE")   //是否开启级联分频，第 4 号和第 6 号计数器各管各的，互不干扰
 )
 clk_mmcm_inst (                 //MMCM 实例接口
-    .CLKIN1(clk_161mhz_int),
+    .CLKIN1(clk_156mhz_int),
     .CLKFBIN(mmcm_clkfb),
     .RST(mmcm_rst),
     .PWRDWN(1'b0),
@@ -348,7 +348,7 @@ wire clk_100mhz_bufg;
 
 BUFG
 init_clk_bufg_inst (
-    .I(clk_100mhz),
+    .I(clk_100mhz_ibufg),
     .O(clk_100mhz_bufg)
 );
 
@@ -370,7 +370,7 @@ wire mmcm_250mhz_clkfb;
 // 混合模式时钟管理器，作用类似于 PLL（锁相环），用来调节频率
 // 功能：将输入的 10 MHz 时钟，倍频到 250 MHz。
 // 压控振荡器 (VCO): MMCM 内部先将频率升高。
-//Fvco​=Fin​×M/D​=10MHz×100/1​=1000MHz
+//Fvco​=Fin​×M/D​=100MHz×10/1​=1000MHz
 //
 //    对应参数：.CLKFBOUT_MULT_F(100) (M) 和 .DIVCLK_DIVIDE(1) (D)
 // 输出 (Output): 将 VCO 频率分频得到最终输出。
@@ -400,7 +400,7 @@ MMCME4_BASE #(
     .CLKOUT6_DIVIDE(1),
     .CLKOUT6_DUTY_CYCLE(0.5),
     .CLKOUT6_PHASE(0),
-    .CLKFBOUT_MULT_F(100),
+    .CLKFBOUT_MULT_F(10),
     .CLKFBOUT_PHASE(0),
     .DIVCLK_DIVIDE(1),
     .REF_JITTER1(0.010),
@@ -522,6 +522,9 @@ assign eeprom_i2c_sda = eeprom_i2c_sda_t_reg ? 1'bz : eeprom_i2c_sda_o_reg;
 // PCIe
 wire pcie_sys_clk;
 wire pcie_sys_clk_gt;
+
+wire clk_100mhz_ibufg;  // 用来连接 IBUFDS 输出到 MMCM 输入
+wire clk_100mhz_int;
 
 IBUFDS_GTE4 #(
     .REFCLK_HROW_CK_SEL(2'b00)
@@ -857,14 +860,14 @@ wire sfp_mgt_refclk;
 wire sfp_mgt_refclk_int;
 wire sfp_mgt_refclk_bufg;
 
-assign clk_161mhz_int = sfp_mgt_refclk_bufg;
+assign clk_156mhz_int = sfp_mgt_refclk_bufg;
 
 IBUFDS_GTE4 ibufds_gte4_sfp_mgt_refclk_inst (
     .I     (sfp_mgt_refclk_p),
     .IB    (sfp_mgt_refclk_n),
     .CEB   (1'b0),
-    .O     (sfp_mgt_refclk),
-    .ODIV2 (sfp_mgt_refclk_int)
+    .O     (sfp_mgt_refclk),        // 这个去驱动 GTY Transceivers
+    .ODIV2 (sfp_mgt_refclk_int)     // 这个去驱动 FPGA 逻辑
 );
 
 BUFG_GT bufg_gt_sfp_mgt_refclk_inst (
@@ -988,10 +991,22 @@ assign ptp_clk = clk_250mhz_int;
 assign ptp_rst = rst_250mhz_int;
 assign ptp_sample_clk = clk_125mhz_int;
 
-assign sfp_1_led[0] = sfp_1_rx_status;
-assign sfp_1_led[1] = 1'b0;
-assign sfp_2_led[0] = sfp_2_rx_status;
-assign sfp_2_led[1] = 1'b0;
+// 定义一个 32位 计数器
+reg [31:0] heartbeat_cnt;
+
+// 在 pcie_user_clk 时钟域下累加
+always @(posedge pcie_user_clk) begin
+    if (pcie_user_reset) begin
+        heartbeat_cnt <= 0;
+    end else begin
+        heartbeat_cnt <= heartbeat_cnt + 1;
+    end
+end
+
+// 把最高位连到 LED 1 (假设 LED 0 是 link 状态)
+assign sfp_1_led = heartbeat_cnt[26]; // 250MHz下，第26位大约每0.26秒翻转一次
+// assign sfp_1_led = sfp_1_rx_status;
+assign sfp_2_led = sfp_2_rx_status;
 
 fpga_core #(
     // FW and board IDs
