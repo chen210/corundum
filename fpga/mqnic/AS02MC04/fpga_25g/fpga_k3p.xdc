@@ -49,6 +49,10 @@ set_property -dict {LOC C11 IOSTANDARD LVCMOS18 SLEW SLOW DRIVE 12} [get_ports {
 set_property -dict {LOC A10 IOSTANDARD LVCMOS18 SLEW SLOW DRIVE 12} [get_ports {led[2]}]
 set_property -dict {LOC B10 IOSTANDARD LVCMOS18 SLEW SLOW DRIVE 12} [get_ports {led[3]}]
 
+set_property -dict {LOC A12 IOSTANDARD LVCMOS18 SLEW SLOW DRIVE 12} [get_ports led_g]
+set_property -dict {LOC A13 IOSTANDARD LVCMOS18 SLEW SLOW DRIVE 12} [get_ports led_r]
+set_property -dict {LOC B9 IOSTANDARD LVCMOS18 SLEW SLOW DRIVE 12}  [get_ports led_heart]
+
 set_false_path -to [get_ports {led[*]}]
 set_output_delay 0 [get_ports {led[*]}]
 

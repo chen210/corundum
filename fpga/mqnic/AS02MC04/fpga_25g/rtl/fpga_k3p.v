@@ -168,6 +168,10 @@ module fpga #
      */
     output wire       sfp_1_led,
     output wire       sfp_2_led,
+    output wire [0:3] led,
+    output wire       led_g,
+    output wire       led_r,
+    output wire       led_heart,
 
     /*
      * PCI express
@@ -896,8 +900,8 @@ sfp_sync_reset_inst (
 
 eth_xcvr_phy_10g_gty_quad_wrapper #(
     .COUNT(2),
-    .GT_1_TX_POLARITY(1'b1),
-    .GT_2_TX_POLARITY(1'b1),
+    .GT_1_TX_POLARITY(1'b0),
+    .GT_2_TX_POLARITY(1'b0),
     .PRBS31_ENABLE(1),
     .TX_SERDES_PIPELINE(1),
     .RX_SERDES_PIPELINE(1),
@@ -1006,10 +1010,10 @@ always @(posedge pcie_user_clk) begin
     end
 end
 
-// 把最高位连到 LED 1 (假设 LED 0 是 link 状态)
-assign sfp_1_led = heartbeat_cnt[26]; // 250MHz下，第26位大约每0.26秒翻转一次
-// assign sfp_1_led = sfp_1_rx_status;
-assign sfp_2_led = sfp_2_rx_status;
+assign led_g = heartbeat_cnt[26]; // 250MHz下，第26位大约每0.26秒翻转一次;
+
+assign sfp_1_led = !sfp_1_rx_status;
+assign sfp_2_led = !sfp_2_rx_status;
 
 fpga_core #(
     // FW and board IDs
