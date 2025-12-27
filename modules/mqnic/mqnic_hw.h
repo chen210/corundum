@@ -55,6 +55,7 @@
 #define MQNIC_BOARD_ID_NEXUS_K3P_Q      0x1ce4000a
 #define MQNIC_BOARD_ID_DNPCIE_40G_KU    0x17df1a00
 #define MQNIC_BOARD_ID_ADM_PCIE_9V3     0x41449003
+#define MQNIC_BOARD_ID_AS02MC04_K3P     0xc0010002
 
 // Register blocks
 #define MQNIC_RB_REG_TYPE      0x00
